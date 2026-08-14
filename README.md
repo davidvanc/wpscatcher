@@ -59,10 +59,19 @@ en gaat na elke refresh weer slapen. Dat scheelt slijtage en stroom.
 
 | Onderdeel | Keuze | Waarom |
 |---|---|---|
-| Bord | Raspberry Pi Zero 2 **WH** | de H = header al gesoldeerd |
+| Bord | Pi Zero 2 **WH**, of gewoon Zero **WH** | de H = header al gesoldeerd |
 | Scherm | Waveshare 4,2" e-Paper Module, **zwart-wit**, 400×300 | zie hieronder |
 | Kaart | microSD 8 GB+ | Raspberry Pi OS **Lite** (Bookworm) |
 | Voeding | usb of powerbank | |
+
+De **originele Zero WH volstaat**, en die is doorgaans wel te krijgen als de
+Zero 2 W uitverkocht is. Het werk hier stelt niets voor: wachten op
+wpa_supplicant, een QR bouwen en één beeld over SPI duwen. De verversing van
+het paneel (4 s) duurt langer dan alles wat de processor doet. Zelfde
+wifi-chipfamilie, zelfde `brcmfmac`-driver, dus WPS werkt identiek, en de
+afmetingen zijn gelijk (65 × 30 mm) zodat elke Zero-case past. Geen enkele
+codewijziging. Je betaalt het alleen met een tragere boot, en dit toestel
+start één keer op.
 
 **Neem geen driekleuren-paneel** (zwart/wit/rood of /geel). Die verversen in
 15–20 s tegen 2–4 s voor zwart-wit, en je wint er niets mee.
