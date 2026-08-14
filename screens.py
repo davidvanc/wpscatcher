@@ -151,11 +151,12 @@ def _qr(payload: str, target_px: int):
     return image, code.box_size
 
 
-def connected(size, ssid: str, psk: str, payload: str):
-    """QR met de netwerknaam en het wachtwoord ernaast of eronder.
+def connected(size, ssid: str, psk: str, payload: str, show_password: bool = True):
+    """QR met de netwerknaam, en optioneel het wachtwoord, ernaast of eronder.
 
-    Het wachtwoord staat er voluit bij: scannen is de snelle weg, overtypen
-    de weg die altijd werkt. Geen kopregel hier -- die ruimte gaat naar de QR.
+    show_password=False maakt de QR groter en houdt het wachtwoord van het
+    scherm; True geeft een leesbare terugvaloptie voor toestellen die niet
+    kunnen scannen. Geen kopregel hier -- die ruimte gaat naar de QR.
     """
     width, height = size
     image, draw = _canvas(size)
@@ -165,8 +166,8 @@ def connected(size, ssid: str, psk: str, payload: str):
     if wide:
         qr_px = height - 2 * pad
     else:
-        qr_px = min(width - 2 * pad,
-                    height - 2 * pad - max(28, height * 22 // 100))
+        reserve = height * (22 if show_password else 13) // 100
+        qr_px = min(width - 2 * pad, height - 2 * pad - max(20, reserve))
 
     qr_image, box = _qr(payload, qr_px)
     qr_x = pad if wide else (width - qr_image.width) // 2
@@ -180,10 +181,12 @@ def connected(size, ssid: str, psk: str, payload: str):
         lines = [
             _fit(draw, "VERBONDEN MET", text_w, max(9, height // 14)),
             _fit(draw, ssid, text_w, max(12, height // 8), "bold"),
-            _fit(draw, psk, text_w, max(11, height // 10), "mono"),
         ]
+        gaps = [max(2, height // 40), 0]
+        if show_password:
+            lines.append(_fit(draw, psk, text_w, max(11, height // 10), "mono"))
+            gaps = [max(2, height // 40), max(5, height // 14), 0]
         boxes = [draw.textbbox((0, 0), text, font=font) for text, font in lines]
-        gaps = [max(2, height // 40), max(5, height // 14), 0]
         y = (height - sum(b[3] for b in boxes) - sum(gaps)) // 2
         for (text, font), bbox, gap in zip(lines, boxes, gaps):
             draw.text((text_x, y), text, font=font, fill=BLACK)
@@ -192,8 +195,10 @@ def connected(size, ssid: str, psk: str, payload: str):
         y = qr_y + qr_image.height + max(6, height // 30)
         name, font = _fit(draw, ssid, width - 2 * pad, max(14, height // 11), "bold")
         y = _center(draw, y, name, font, width)
-        key, kfont = _fit(draw, psk, width - 2 * pad, max(12, height // 14), "mono")
-        _center(draw, y + max(4, height // 40), key, kfont, width)
+        if show_password:
+            key, kfont = _fit(draw, psk, width - 2 * pad, max(12, height // 14),
+                              "mono")
+            _center(draw, y + max(4, height // 40), key, kfont, width)
 
     return image, box
 

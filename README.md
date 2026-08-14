@@ -18,7 +18,26 @@ wifi-gegevens als QR-code op een e-ink schermpje. Twee schermen, meer niet.
 ![verbonden](docs/scherm-qr.png)
 
 Het wachtwoord staat er in mono voluit bij: scannen is de snelle weg,
-overtypen de weg die altijd werkt.
+overtypen de weg die altijd werkt — een laptop of desktop zonder camera kan
+niet scannen. Wil je het wachtwoord niet leesbaar op het scherm, zet dan
+`show_password = no` in `config.ini`.
+
+Dat kost de QR bijna niets. Gemeten met `test_render.py`:
+
+| Paneel | met wachtwoord | zonder | winst |
+|---|---|---|---|
+| 2,13" 250×122 | 3 px/module | 3 px/module | geen |
+| 2,9" 296×128 | 3 px/module | 3 px/module | geen |
+| 4,2" 400×300 | 6 px/module | 7 px/module | 1 px/module |
+| 7,5" 800×480 | 13 px/module | 13 px/module | geen |
+
+Op de smalle panelen wordt de QR begrensd door de schermhoogte en niet door
+de tekstkolom, dus daar is het gratis.
+
+E-ink houdt zijn beeld vast zonder stroom: een uitgeschakeld toestel toont het
+wachtwoord dus gewoon verder. Daarom wist wpscatcher bij een nette stop
+(`systemctl stop`, afsluiten) het scherm. Uit te zetten met
+`clear_on_stop = no`.
 
 ## Hoe het werkt
 
@@ -58,6 +77,8 @@ met `test_render.py`:
 | 2,9" 296×128 | 3 | werkt |
 | 4,2" 400×300 | 5–6 | comfortabel |
 | 7,5" 800×480 | 11–13 | ruim |
+
+Onder de 3 px per module wordt scannen onbetrouwbaar.
 
 Op de smalle panelen zet de layout de QR links en de tekst rechts; op 4,2" en
 vierkanter staat de tekst onder de QR. Dat gaat automatisch.

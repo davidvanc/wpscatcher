@@ -33,10 +33,11 @@ CASES = [
 OUT = "preview"
 
 
-def check(name, size, label, ssid, psk):
+def check(name, size, label, ssid, psk, show_password=True):
     payload = screens.wifi_payload(ssid, psk)
-    image, box = screens.connected(size, ssid, psk, payload)
-    path = os.path.join(OUT, f"qr_{name}_{label.replace(' ', '_')}.png")
+    image, box = screens.connected(size, ssid, psk, payload, show_password)
+    suffix = "" if show_password else "_zonderpw"
+    path = os.path.join(OUT, f"qr_{name}_{label.replace(' ', '_')}{suffix}.png")
     image.convert("L").save(path)
 
     results = zxingcpp.read_barcodes(Image.open(path))
@@ -56,12 +57,16 @@ def main() -> int:
         screens.searching(size, 3, "wlan0", 130).convert("L").save(
             os.path.join(OUT, f"zoek_{name}.png"))
         print(f"\n{name}  ({size[0]}x{size[1]})")
+        print(f"  {'':<24} {'met wachtwoord':>15}  {'zonder':>9}")
         for label, ssid, psk in CASES:
-            ok, box, note = check(name, size, label, ssid, psk)
-            flag = "PASS" if ok else "FAIL"
-            warn = "  <- krap" if ok and box < 3 else ""
-            print(f"  {flag}  {label:<18} {box} px/module  {note}{warn}")
-            failures += not ok
+            ok_a, box_a, note_a = check(name, size, label, ssid, psk, True)
+            ok_b, box_b, note_b = check(name, size, label, ssid, psk, False)
+            flag = "PASS" if ok_a and ok_b else "FAIL"
+            note = "" if ok_a and ok_b else f"  {note_a} / {note_b}"
+            warn = "  <- krap" if min(box_a, box_b) < 3 else ""
+            print(f"  {flag}  {label:<18} {box_a:>8} px/mod {box_b:>6} px/mod"
+                  f"{note}{warn}")
+            failures += not (ok_a and ok_b)
 
     print(f"\n{failures} mislukt")
     return 1 if failures else 0

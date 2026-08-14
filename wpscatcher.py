@@ -40,7 +40,11 @@ DEFAULTS = {
         "preview_size": "400x300",
         "preview_dir": "preview",
     },
-    "ui": {"title": "wpscatcher"},
+    "ui": {
+        "title": "wpscatcher",
+        "show_password": "yes",
+        "clear_on_stop": "yes",
+    },
 }
 
 
@@ -48,7 +52,9 @@ def load_config(path: str | None) -> configparser.ConfigParser:
     cfg = configparser.ConfigParser()
     cfg.read_dict(DEFAULTS)
     if path and os.path.exists(path):
-        cfg.read(path, encoding="utf-8")
+        # utf-8-sig: een op Windows bewerkte config kan een BOM hebben, en
+        # daar struikelt configparser over
+        cfg.read(path, encoding="utf-8-sig")
         log.info("config gelezen uit %s", path)
     return cfg
 
@@ -63,9 +69,10 @@ def build_display(cfg):
     )
 
 
-def show_credentials(disp, creds: Credentials, title: str) -> None:
+def show_credentials(disp, creds: Credentials, cfg) -> None:
     payload = screens.wifi_payload(creds.ssid, creds.psk, creds.hidden)
-    image, box = screens.connected(disp.size, creds.ssid, creds.psk, payload)
+    image, box = screens.connected(disp.size, creds.ssid, creds.psk, payload,
+                                   cfg["ui"].getboolean("show_password"))
     if box < 3:
         log.warning(
             "QR staat op %d px per module -- krap; een groter paneel scant "
@@ -130,7 +137,7 @@ def run(cfg, disp) -> None:
             address = sup.request_ip()
             log.info("ip: %s", address or "geen")
 
-        show_credentials(disp, creds, title)
+        show_credentials(disp, creds, cfg)
         watch_connection(sup)
 
 
@@ -139,7 +146,7 @@ def simulate(cfg, disp, ssid: str, psk: str) -> None:
     title = cfg["ui"]["title"]
     disp.show(screens.searching(disp.size, 3, cfg["wifi"]["interface"],
                                 cfg["wifi"].getint("window"), title))
-    show_credentials(disp, Credentials(ssid=ssid, psk=psk), title)
+    show_credentials(disp, Credentials(ssid=ssid, psk=psk), cfg)
 
 
 def main() -> int:
@@ -161,7 +168,17 @@ def main() -> int:
 
     cfg = load_config(args.config)
     disp = build_display(cfg)
-    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+
+    # E-ink houdt zijn beeld vast zonder stroom: bij een nette stop wissen we
+    # het scherm, anders blijft een klantwachtwoord op het toestel staan.
+    stopping = False
+
+    def on_term(*_):
+        nonlocal stopping
+        stopping = True
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, on_term)
 
     try:
         if args.clear:
@@ -171,8 +188,11 @@ def main() -> int:
         else:
             run(cfg, disp)
     except KeyboardInterrupt:
-        pass
+        stopping = True
     finally:
+        if stopping and cfg["ui"].getboolean("clear_on_stop"):
+            log.info("scherm wissen bij het stoppen")
+            disp.clear()
         disp.sleep()
     return 0
 
