@@ -101,6 +101,12 @@ vierkanter staat de tekst onder de QR. Dat gaat automatisch.
 
 ## Installeren op de Zero
 
+De kaart klaarzetten — image, SSH met sleutel, sudo, en hoe je binnengeraakt
+nadat wpscatcher wlan0 heeft overgenomen — staat in
+[OS-SETUP.md](OS-SETUP.md). Lees dat eerst; er zit één valkuil in die een
+niet-bootende kaart oplevert.
+
+
 Geef het paneel mee als argument — `2in13`, `2in9`, `4in2` of `7in5`:
 
 ```bash
