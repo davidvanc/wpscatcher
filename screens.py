@@ -153,8 +153,12 @@ def _password_line(draw, psk: str, max_w: int, px: int):
 
 
 def _qr(payload: str, target_px: int):
+    # Rand 1 in plaats van de voorgeschreven 4: het paneel is wit en de
+    # layout zet er zelf al marge omheen, dus die stille zone komt van de
+    # pagina. Dat scheelt op de 2,13" bij een lange payload het verschil
+    # tussen 2 en 3 pixels per module -- gemeten, niet gegokt.
     code = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L,
-                         border=2, box_size=1)
+                         border=1, box_size=1)
     code.add_data(payload)
     code.make(fit=True)
     modules = code.modules_count + 2 * code.border

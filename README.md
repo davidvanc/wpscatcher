@@ -150,6 +150,16 @@ papierwit, op ware fysieke schaal, met oplopende onscherpte tot het decoderen
 stukloopt. Geen absolute garantie, wel een eerlijke vergelijking tussen
 panelen — de 4,2" verdraagt ruim tweemaal zoveel onscherpte als de 2,9".
 
+```bash
+python print_test.py --panel 2in13
+```
+
+Maakt een A4-pdf met de schermen op **ware grootte**, om met een echte
+telefoon te scannen voor de hardware binnen is. E-ink en papier hebben
+vergelijkbaar contrast (allebei diffuus, geen achtergrondverlichting), dus
+wat op papier op ware grootte leest, leest op het paneel ook. Er staat een
+meetlijn op om te controleren of je printer echt op 100% stond.
+
 Het enige dat écht hardware nodig heeft is `wps_pbc` zelf en de SPI-driver.
 
 ## Bestanden
