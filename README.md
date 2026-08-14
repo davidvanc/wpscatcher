@@ -125,6 +125,15 @@ Controleert het uitlezen van `wpa_supplicant.conf`: gewone passphrase,
 hex-PSK, aanhalingstekens in het wachtwoord, hex-encoded ssid, verborgen
 netwerk, meerdere netwerkblokken, en een lege config.
 
+```bash
+python test_scan.py
+```
+
+Bootst na hoe een telefooncamera de QR ziet: e-ink-grijswaarden in plaats van
+papierwit, op ware fysieke schaal, met oplopende onscherpte tot het decoderen
+stukloopt. Geen absolute garantie, wel een eerlijke vergelijking tussen
+panelen — de 4,2" verdraagt ruim tweemaal zoveel onscherpte als de 2,9".
+
 Het enige dat écht hardware nodig heeft is `wps_pbc` zelf en de SPI-driver.
 
 ## Bestanden
