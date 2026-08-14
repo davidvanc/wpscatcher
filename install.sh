@@ -57,11 +57,15 @@ echo "== 4/6  NetworkManager uitschakelen op wlan0 =="
 if systemctl is-enabled NetworkManager >/dev/null 2>&1; then
   cat <<'WARN'
 NetworkManager wordt gemaskeerd. Dit toestel beheert wlan0 daarna zelf.
-Zorg dat je een andere weg naar binnen hebt (toetsenbord+scherm, of usb-ethernet)
-voor het geval er iets misloopt.
+Zorg dat je een andere weg naar binnen hebt (usb gadget, serieel, of
+toetsenbord+scherm) voor het geval er iets misloopt.
 WARN
-  read -r -p "Doorgaan? [j/N] " answer
-  [[ ${answer,,} == j ]] || { echo "Afgebroken."; exit 1; }
+  if [[ ${WPSCATCHER_ASSUME_YES:-} == 1 ]]; then
+    echo "WPSCATCHER_ASSUME_YES=1 -- niet vragen, doorgaan"
+  else
+    read -r -p "Doorgaan? [j/N] " answer
+    [[ ${answer,,} == j ]] || { echo "Afgebroken."; exit 1; }
+  fi
   systemctl disable --now NetworkManager
   systemctl mask NetworkManager
   systemctl disable --now wpa_supplicant 2>/dev/null || true

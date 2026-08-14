@@ -101,9 +101,17 @@ vierkanter staat de tekst onder de QR. Dat gaat automatisch.
 
 ## Installeren op de Zero
 
-De kaart klaarzetten — image, SSH met sleutel, sudo, en hoe je binnengeraakt
-nadat wpscatcher wlan0 heeft overgenomen — staat in
-[OS-SETUP.md](OS-SETUP.md). Lees dat eerst; er zit één valkuil in die een
+**De snelle weg is [autoinstall/](autoinstall/)**: kale Raspberry Pi OS Lite
+op de kaart, één PowerShell-script erover, kaart in de Pi. Die installeert
+zichzelf, inclusief gebruiker, ssh-sleutel, usb gadget mode en het juiste
+paneel. Geen Imager-menu's, geen ssh-sessie.
+
+```powershell
+.\prepare-sd.ps1 -Drive E: -Panel 2in13 -Hostname wpscatcher-klein -User david -PubKeyFile ~\.ssh\id_ed25519.pub -WifiSsid MijnThuisnet -WifiPassword geheim123
+```
+
+Wil je het met de hand doen, of moet je achteraf iets nakijken, dan staat de
+uitleg per stap in [OS-SETUP.md](OS-SETUP.md) — inclusief de valkuil die een
 niet-bootende kaart oplevert.
 
 
