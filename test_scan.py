@@ -26,6 +26,7 @@ import screens
 
 # actieve schermmaat volgens de Waveshare-specificaties
 PANELS = {
+    '2,13" 250x122': {"size": (250, 122), "mm_per_px": 48.55 / 250},
     '2,9" 296x128': {"size": (296, 128), "mm_per_px": 66.89 / 296},
     '4,2" 400x300': {"size": (400, 300), "mm_per_px": 84.80 / 400},
 }
@@ -84,14 +85,11 @@ def main() -> int:
         results[name] = margins
         print()
 
-    keys = list(results)
-    if len(keys) == 2:
-        a, b = (min(results[k]) for k in keys)
-        if a > 0:
-            print(f"Slechtste geval: {keys[1]} verdraagt {b / a:.1f}x zoveel "
-                  f"onscherpte als {keys[0]}.")
-        else:
-            print(f"{keys[0]} haalt in het slechtste geval geen enkele marge.")
+    print("Slechtste geval per paneel:")
+    basis = min(min(v) for v in results.values()) or 1
+    for name, margins in results.items():
+        worst = min(margins)
+        print(f"  {name:<16} {worst:.2f} mm   ({worst / basis:.1f}x)")
     return 0
 
 
