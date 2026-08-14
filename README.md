@@ -89,8 +89,10 @@ vierkanter staat de tekst onder de QR. Dat gaat automatisch.
 sudo bash install.sh
 ```
 
-Daarna in `/etc/wpscatcher/config.ini` de juiste `driver` zetten voor je
-paneel, herstarten (SPI heeft een reboot nodig), en meekijken met:
+Daarna in `/etc/wpscatcher/config.ini` het juiste paneel zetten — één regel,
+`panel = 2in13`, `2in9`, `4in2` of `7in5`. Driver, rotatie en schermmaat
+komen daar samen uit, zodat die niet uit de pas kunnen lopen. Herstarten (SPI
+heeft een reboot nodig) en meekijken met:
 
 ```bash
 journalctl -u wpscatcher -f
@@ -108,6 +110,9 @@ layout is op een pc te controleren:
 ```bash
 python wpscatcher.py --simulate -c config.ini
 ```
+
+Met `--panel 2in9` render je een ander paneel zonder de config aan te raken,
+handig om twee toestellen naast elkaar te vergelijken.
 
 ```bash
 python test_render.py

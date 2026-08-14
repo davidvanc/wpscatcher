@@ -24,6 +24,16 @@ from wps import Credentials, Supplicant, WpaError
 
 log = logging.getLogger("wpscatcher")
 
+# driver, rotatie en paneelmaat horen bij elkaar: de kleine panelen zijn
+# staand gemonteerd en moeten 90 graden gedraaid worden. Als losse
+# instellingen raken ze uit de pas, vandaar één naam per paneel.
+PANEL_PRESETS = {
+    "2in13": ("epd2in13_V4", 90, (250, 122)),
+    "2in9": ("epd2in9_V2", 90, (296, 128)),
+    "4in2": ("epd4in2_V2", 0, (400, 300)),
+    "7in5": ("epd7in5_V2", 0, (800, 480)),
+}
+
 DEFAULTS = {
     "wifi": {
         "interface": "wlan0",
@@ -35,6 +45,8 @@ DEFAULTS = {
         "request_ip": "yes",
     },
     "display": {
+        "panel": "4in2",
+        # alleen gebruikt als 'panel' leeggemaakt wordt
         "driver": "epd4in2_V2",
         "rotate": "0",
         "preview_size": "400x300",
@@ -59,13 +71,27 @@ def load_config(path: str | None) -> configparser.ConfigParser:
     return cfg
 
 
-def build_display(cfg):
-    width, _, height = cfg["display"]["preview_size"].partition("x")
+def build_display(cfg, panel: str | None = None):
+    section = cfg["display"]
+    name = (panel or section.get("panel", "")).strip()
+
+    if name:
+        if name not in PANEL_PRESETS:
+            raise SystemExit(
+                f"onbekend paneel '{name}' -- kies uit: "
+                f"{', '.join(sorted(PANEL_PRESETS))}")
+        driver, rotate, size = PANEL_PRESETS[name]
+        log.info("paneel %s -> %s, rotatie %d", name, driver, rotate)
+    else:
+        # ontsnappingsluik voor een paneel dat niet in de tabel staat
+        width, _, height = section["preview_size"].partition("x")
+        driver = section["driver"]
+        rotate = section.getint("rotate")
+        size = (int(width), int(height))
+
     return display_mod.make_display(
-        driver=cfg["display"]["driver"],
-        rotate=cfg["display"].getint("rotate"),
-        size=(int(width), int(height)),
-        out_dir=cfg["display"]["preview_dir"],
+        driver=driver, rotate=rotate, size=size,
+        out_dir=section["preview_dir"],
     )
 
 
@@ -154,6 +180,9 @@ def main() -> int:
     parser.add_argument("-c", "--config", default="/etc/wpscatcher/config.ini")
     parser.add_argument("--simulate", action="store_true",
                         help="render beide schermen met nepgegevens")
+    parser.add_argument("--panel", choices=sorted(PANEL_PRESETS),
+                        help="paneel uit de config overrulen, handig om "
+                             "beide toestellen te vergelijken")
     parser.add_argument("--ssid", default="Telenet-3F2A9")
     parser.add_argument("--psk", default="Xk7mQp2ravenzwart")
     parser.add_argument("--clear", action="store_true",
@@ -167,7 +196,7 @@ def main() -> int:
     )
 
     cfg = load_config(args.config)
-    disp = build_display(cfg)
+    disp = build_display(cfg, args.panel)
 
     # E-ink houdt zijn beeld vast zonder stroom: bij een nette stop wissen we
     # het scherm, anders blijft een klantwachtwoord op het toestel staan.
