@@ -89,6 +89,13 @@ met `test_render.py`:
 
 Onder de 3 px per module wordt scannen onbetrouwbaar.
 
+**Geijkt op een echte telefoon** (14-08-2026): het testblad van
+`print_test.py` afgedrukt op 100%, 70% en 50%. Modules van 0,58 mm en 0,41 mm
+lezen, 0,29 mm niet meer — de faalgrens ligt rond 0,3–0,4 mm. De 2,13" zit met
+0,58 mm dus op ~1,4× die grens, de 4,2" op ~3,1×. Op papier is dat eerder
+pessimistisch dan optimistisch: een verkleinde afdruk heeft inktspreiding en
+rafelige randen, e-ink heeft harde pixelgrenzen.
+
 Op de smalle panelen zet de layout de QR links en de tekst rechts; op 4,2" en
 vierkanter staat de tekst onder de QR. Dat gaat automatisch.
 

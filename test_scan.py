@@ -37,6 +37,14 @@ CASES = [
     ("lang random", "KLANT-GASTNET-2026", "b7Q!x2Lm9pR4vZ8tK1nS"),
 ]
 
+# Empirisch geijkt op 14-08-2026: het testblad van print_test.py afgedrukt op
+# 100%, 70% en 50% en gescand met een echte telefoon. 0,58 mm modules lezen,
+# 0,41 mm leest nog, 0,29 mm niet meer. De faalgrens ligt dus rond 0,3-0,4 mm.
+# Op papier is dat eerder pessimistisch dan optimistisch: een verkleinde
+# afdruk heeft inktspreiding en rafelige randen, e-ink heeft harde pixels.
+GEMETEN_WERKT_MM = 0.41
+GEMETEN_FAALT_MM = 0.29
+
 PX_PER_MM = 10          # gemeenschappelijke fysieke schaal
 EINK_BLACK, EINK_WHITE = 45, 205    # e-ink is geen inkt op papier
 MAX_BLUR_MM = 2.0
@@ -80,8 +88,13 @@ def main() -> int:
             blur = max_readable_blur(photo)
             margins.append(blur)
             module_mm = box * spec["mm_per_px"]
+            factor = module_mm / GEMETEN_WERKT_MM
+            oordeel = ("ruim" if factor >= 2 else
+                       "ok" if factor >= 1.2 else
+                       "KRAP" if module_mm > GEMETEN_FAALT_MM else "TE KLEIN")
             print(f"  {label:<14} {box} px/module = {module_mm:.2f} mm  "
-                  f"-> leesbaar tot {blur:.2f} mm onscherpte")
+                  f"-> {blur:.2f} mm onscherpte, {factor:.1f}x de gemeten "
+                  f"grens ({oordeel})")
         results[name] = margins
         print()
 
