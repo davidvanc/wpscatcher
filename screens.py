@@ -194,14 +194,13 @@ def connected(size, ssid: str, psk: str, payload: str, show_password: bool = Tru
         # tekstkolom naast de QR, als één blok verticaal gecentreerd
         text_x = qr_x + qr_image.width + max(10, width // 24)
         text_w = width - text_x - pad - max(3, width // 50)
-        lines = [
-            _fit(draw, "VERBONDEN MET", text_w, max(9, height // 14)),
-            _fit(draw, ssid, text_w, max(12, height // 8), "bold"),
-        ]
-        gaps = [max(2, height // 40), 0]
+        # geen kopregel: op een smal paneel is elke pixel breedte er een, en
+        # naam plus wachtwoord spreken voor zich naast een wifi-QR
+        lines = [_fit(draw, ssid, text_w, max(13, height // 6), "bold")]
+        gaps = [0]
         if show_password:
-            lines.append(_password_line(draw, psk, text_w, max(11, height // 10)))
-            gaps = [max(2, height // 40), max(5, height // 14), 0]
+            lines.append(_password_line(draw, psk, text_w, max(12, height // 8)))
+            gaps = [max(4, height // 14), 0]
         boxes = [draw.textbbox((0, 0), text, font=font) for text, font in lines]
         y = (height - sum(b[3] for b in boxes) - sum(gaps)) // 2
         for (text, font), bbox, gap in zip(lines, boxes, gaps):
