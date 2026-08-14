@@ -85,14 +85,16 @@ vierkanter staat de tekst onder de QR. Dat gaat automatisch.
 
 ## Installeren op de Zero
 
+Geef het paneel mee als argument — `2in13`, `2in9`, `4in2` of `7in5`:
+
 ```bash
-sudo bash install.sh
+sudo bash install.sh 4in2
 ```
 
-Daarna in `/etc/wpscatcher/config.ini` het juiste paneel zetten — één regel,
-`panel = 2in13`, `2in9`, `4in2` of `7in5`. Driver, rotatie en schermmaat
-komen daar samen uit, zodat die niet uit de pas kunnen lopen. Herstarten (SPI
-heeft een reboot nodig) en meekijken met:
+Driver, rotatie en schermmaat komen uit die ene naam, zodat ze niet uit de
+pas kunnen lopen. Draai je meerdere toestellen met verschillende panelen, dan
+is dat het enige dat verschilt — zelfde code, zelfde service, zelfde config
+op één regel na. Herstarten (SPI heeft een reboot nodig) en meekijken met:
 
 ```bash
 journalctl -u wpscatcher -f

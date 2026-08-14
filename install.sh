@@ -8,7 +8,18 @@ APP=/opt/wpscatcher
 ETC=/etc/wpscatcher
 EPAPER_REPO=https://github.com/waveshareteam/e-Paper.git
 
+# Welk paneel op dit toestel zit. Eén codebase, twee toestellen: het
+# verschil zit alleen in deze regel.
+PANEL="${1:-4in2}"
+
 [[ $EUID -eq 0 ]] || { echo "Draai dit met sudo."; exit 1; }
+
+case "$PANEL" in
+  2in13|2in9|4in2|7in5) ;;
+  *) echo "Onbekend paneel '$PANEL'. Gebruik: sudo bash install.sh [2in13|2in9|4in2|7in5]"
+     exit 1 ;;
+esac
+echo "Installeren voor paneel: $PANEL"
 
 echo "== 1/6  pakketten =="
 apt-get update
@@ -65,8 +76,11 @@ install -m 644 "$SRC/wps.py" "$SRC/screens.py" "$SRC/display.py" "$APP/"
 if [[ -f $ETC/config.ini ]]; then
   echo "$ETC/config.ini bestaat al -- niet overschreven"
   install -m 644 "$SRC/config.ini" "$ETC/config.ini.nieuw"
+  sed -i "s/^panel = .*/panel = $PANEL/" "$ETC/config.ini.nieuw"
 else
   install -m 644 "$SRC/config.ini" "$ETC/config.ini"
+  sed -i "s/^panel = .*/panel = $PANEL/" "$ETC/config.ini"
+  echo "panel = $PANEL gezet in $ETC/config.ini"
 fi
 
 echo
@@ -77,10 +91,12 @@ systemctl enable wpscatcher.service
 
 cat <<EOF
 
-Klaar. Nog even doen:
-  1. Zet in $ETC/config.ini de juiste 'driver' voor jouw paneel.
-  2. Herstart (SPI heeft een reboot nodig):   sudo reboot
-  3. Meekijken:                               journalctl -u wpscatcher -f
+Klaar, ingesteld voor paneel '$PANEL'. Nog even doen:
+  1. Herstart (SPI heeft een reboot nodig):   sudo reboot
+  2. Meekijken:                               journalctl -u wpscatcher -f
+
+Klopt de drivernaam niet met jouw revisie (Waveshare heeft _V2/_V3/_V4
+naast elkaar), pas dan PANEL_PRESETS aan in $APP/wpscatcher.py.
 
 Handmatig testen zonder de service:
   sudo systemctl stop wpscatcher
