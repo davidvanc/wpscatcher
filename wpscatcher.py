@@ -1,0 +1,181 @@
+#!/usr/bin/env python3
+"""wpscatcher -- verbind via WPS en toon de credentials als QR op e-ink.
+
+Twee schermen, meer niet:
+  1. WPS zoeken   -- staat er zolang er geen verbinding is
+  2. QR           -- verschijnt zodra we ssid + wachtwoord hebben
+
+Valt de verbinding weg, dan begint hij gewoon opnieuw bij scherm 1.
+"""
+
+from __future__ import annotations
+
+import argparse
+import configparser
+import logging
+import os
+import signal
+import sys
+import time
+
+import display as display_mod
+import screens
+from wps import Credentials, Supplicant, WpaError
+
+log = logging.getLogger("wpscatcher")
+
+DEFAULTS = {
+    "wifi": {
+        "interface": "wlan0",
+        "country": "BE",
+        "conf": "/etc/wpscatcher/wpa_supplicant.conf",
+        "window": "130",        # WPS-venster is 120 s, iets marge
+        "retry_delay": "10",
+        "forget_on_boot": "yes",
+        "request_ip": "yes",
+    },
+    "display": {
+        "driver": "epd4in2_V2",
+        "rotate": "0",
+        "preview_size": "400x300",
+        "preview_dir": "preview",
+    },
+    "ui": {"title": "wpscatcher"},
+}
+
+
+def load_config(path: str | None) -> configparser.ConfigParser:
+    cfg = configparser.ConfigParser()
+    cfg.read_dict(DEFAULTS)
+    if path and os.path.exists(path):
+        cfg.read(path, encoding="utf-8")
+        log.info("config gelezen uit %s", path)
+    return cfg
+
+
+def build_display(cfg):
+    width, _, height = cfg["display"]["preview_size"].partition("x")
+    return display_mod.make_display(
+        driver=cfg["display"]["driver"],
+        rotate=cfg["display"].getint("rotate"),
+        size=(int(width), int(height)),
+        out_dir=cfg["display"]["preview_dir"],
+    )
+
+
+def show_credentials(disp, creds: Credentials, title: str) -> None:
+    payload = screens.wifi_payload(creds.ssid, creds.psk, creds.hidden)
+    image, box = screens.connected(disp.size, creds.ssid, creds.psk, payload)
+    if box < 3:
+        log.warning(
+            "QR staat op %d px per module -- krap; een groter paneel scant "
+            "betrouwbaarder", box)
+    if creds.is_raw_psk:
+        log.warning("QR bevat een hex-PSK; niet elke telefoon accepteert die")
+    disp.show(image)
+    log.info("QR getoond voor '%s' (%d px per module)", creds.ssid, box)
+
+
+def watch_connection(sup: Supplicant, poll: int = 30) -> None:
+    """Blijf hangen tot de verbinding wegvalt."""
+    misses = 0
+    while misses < 2:
+        time.sleep(poll)
+        if sup.state() == "COMPLETED":
+            misses = 0
+        else:
+            misses += 1
+    log.info("verbinding weg -- terug naar WPS")
+
+
+def run(cfg, disp) -> None:
+    wifi = cfg["wifi"]
+    title = cfg["ui"]["title"]
+    interface = wifi["interface"]
+    window = wifi.getint("window")
+
+    sup = Supplicant(interface, wifi["conf"], wifi["country"])
+    if wifi.getboolean("forget_on_boot"):
+        sup.reset_config()
+    sup.start()
+
+    attempt = 0
+    while True:
+        attempt += 1
+        disp.show(screens.searching(disp.size, attempt, interface, window, title))
+
+        try:
+            sup.wps_pbc()
+        except WpaError as exc:
+            log.error("WPS starten mislukt: %s", exc)
+            time.sleep(wifi.getint("retry_delay"))
+            continue
+
+        if not sup.wait_connected(window):
+            log.info("poging %d: geen WPS binnen %ds", attempt, window)
+            sup.wps_cancel()
+            time.sleep(wifi.getint("retry_delay"))
+            continue
+
+        creds = sup.credentials()
+        if creds is None or not creds.psk:
+            log.error("verbonden, maar geen bruikbaar wachtwoord in de config")
+            disp.show(screens.message(
+                disp.size, "Geen wachtwoord",
+                "verbonden, maar niets om te tonen", title))
+            time.sleep(wifi.getint("retry_delay"))
+            continue
+
+        if wifi.getboolean("request_ip"):
+            address = sup.request_ip()
+            log.info("ip: %s", address or "geen")
+
+        show_credentials(disp, creds, title)
+        watch_connection(sup)
+
+
+def simulate(cfg, disp, ssid: str, psk: str) -> None:
+    """Beide schermen renderen zonder wifi, om de layout te controleren."""
+    title = cfg["ui"]["title"]
+    disp.show(screens.searching(disp.size, 3, cfg["wifi"]["interface"],
+                                cfg["wifi"].getint("window"), title))
+    show_credentials(disp, Credentials(ssid=ssid, psk=psk), title)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("-c", "--config", default="/etc/wpscatcher/config.ini")
+    parser.add_argument("--simulate", action="store_true",
+                        help="render beide schermen met nepgegevens")
+    parser.add_argument("--ssid", default="Telenet-3F2A9")
+    parser.add_argument("--psk", default="Xk7mQp2ravenzwart")
+    parser.add_argument("--clear", action="store_true",
+                        help="scherm wit maken en stoppen")
+    args = parser.parse_args()
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(name)s %(levelname)s %(message)s",
+        datefmt="%H:%M:%S",
+    )
+
+    cfg = load_config(args.config)
+    disp = build_display(cfg)
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+
+    try:
+        if args.clear:
+            disp.clear()
+        elif args.simulate:
+            simulate(cfg, disp, args.ssid, args.psk)
+        else:
+            run(cfg, disp)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        disp.sleep()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

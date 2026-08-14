@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# Installeer wpscatcher op een Raspberry Pi Zero 2 W met Raspberry Pi OS Lite.
+# Draaien met: sudo bash install.sh
+set -euo pipefail
+
+SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP=/opt/wpscatcher
+ETC=/etc/wpscatcher
+EPAPER_REPO=https://github.com/waveshareteam/e-Paper.git
+
+[[ $EUID -eq 0 ]] || { echo "Draai dit met sudo."; exit 1; }
+
+echo "== 1/6  pakketten =="
+apt-get update
+apt-get install -y --no-install-recommends \
+  python3 python3-pil python3-qrcode python3-spidev python3-gpiozero \
+  python3-lgpio wpasupplicant iw git
+
+echo
+echo "== 2/6  SPI aanzetten =="
+if command -v raspi-config >/dev/null; then
+  raspi-config nonint do_spi 0
+else
+  grep -q '^dtparam=spi=on' /boot/firmware/config.txt 2>/dev/null \
+    || echo 'dtparam=spi=on' >> /boot/firmware/config.txt
+fi
+
+echo
+echo "== 3/6  waveshare_epd ophalen =="
+if [[ -d $APP/waveshare_epd ]]; then
+  echo "staat er al, overslaan"
+else
+  TMP=$(mktemp -d)
+  # sparse checkout: de volle repo is honderden MB, wij willen één map
+  git clone --depth 1 --filter=blob:none --sparse "$EPAPER_REPO" "$TMP/e-Paper"
+  git -C "$TMP/e-Paper" sparse-checkout set RaspberryPi_JetsonNano/python/lib/waveshare_epd
+  mkdir -p "$APP"
+  cp -r "$TMP/e-Paper/RaspberryPi_JetsonNano/python/lib/waveshare_epd" "$APP/"
+  rm -rf "$TMP"
+fi
+
+echo
+echo "== 4/6  NetworkManager uitschakelen op wlan0 =="
+# NetworkManager kan geen WPS en pakt anders wlan0 af van onze supplicant.
+if systemctl is-enabled NetworkManager >/dev/null 2>&1; then
+  cat <<'WARN'
+NetworkManager wordt gemaskeerd. Dit toestel beheert wlan0 daarna zelf.
+Zorg dat je een andere weg naar binnen hebt (toetsenbord+scherm, of usb-ethernet)
+voor het geval er iets misloopt.
+WARN
+  read -r -p "Doorgaan? [j/N] " answer
+  [[ ${answer,,} == j ]] || { echo "Afgebroken."; exit 1; }
+  systemctl disable --now NetworkManager
+  systemctl mask NetworkManager
+  systemctl disable --now wpa_supplicant 2>/dev/null || true
+else
+  echo "NetworkManager staat niet aan, niets te doen"
+fi
+
+echo
+echo "== 5/6  bestanden plaatsen =="
+mkdir -p "$APP" "$ETC"
+install -m 755 "$SRC/wpscatcher.py" "$APP/wpscatcher.py"
+install -m 644 "$SRC/wps.py" "$SRC/screens.py" "$SRC/display.py" "$APP/"
+if [[ -f $ETC/config.ini ]]; then
+  echo "$ETC/config.ini bestaat al -- niet overschreven"
+  install -m 644 "$SRC/config.ini" "$ETC/config.ini.nieuw"
+else
+  install -m 644 "$SRC/config.ini" "$ETC/config.ini"
+fi
+
+echo
+echo "== 6/6  service =="
+install -m 644 "$SRC/wpscatcher.service" /etc/systemd/system/wpscatcher.service
+systemctl daemon-reload
+systemctl enable wpscatcher.service
+
+cat <<EOF
+
+Klaar. Nog even doen:
+  1. Zet in $ETC/config.ini de juiste 'driver' voor jouw paneel.
+  2. Herstart (SPI heeft een reboot nodig):   sudo reboot
+  3. Meekijken:                               journalctl -u wpscatcher -f
+
+Handmatig testen zonder de service:
+  sudo systemctl stop wpscatcher
+  sudo python3 $APP/wpscatcher.py -c $ETC/config.ini --simulate
+EOF

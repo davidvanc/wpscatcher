@@ -1,0 +1,4 @@
+# Alles gaat naar Linux: LF afdwingen, ook in de werkkopie op Windows.
+# Een install.sh met CRLF geeft daar "bad interpreter".
+* text=auto eol=lf
+*.png binary

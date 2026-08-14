@@ -1,0 +1,18 @@
+[Unit]
+Description=wpscatcher -- WPS naar QR op e-ink
+After=multi-user.target
+Wants=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/wpscatcher/wpscatcher.py -c /etc/wpscatcher/config.ini
+WorkingDirectory=/opt/wpscatcher
+# root nodig voor SPI (e-ink) en de wpa_supplicant control socket
+User=root
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

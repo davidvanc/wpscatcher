@@ -1,0 +1,5 @@
+__pycache__/
+*.py[cod]
+
+# gegenereerde testrenders -- opnieuw te maken met test_render.py
+preview/
