@@ -29,6 +29,9 @@ log = logging.getLogger("wpscatcher")
 # instellingen raken ze uit de pas, vandaar één naam per paneel.
 PANEL_PRESETS = {
     "2in13": ("epd2in13_V4", 90, (250, 122)),
+    # de touch-uitvoering met ABS-behuizing is een V3: zelfde paneel en
+    # zelfde resolutie, andere drivernaam. De touch zelf gebruiken we niet.
+    "2in13v3": ("epd2in13_V3", 90, (250, 122)),
     "2in9": ("epd2in9_V2", 90, (296, 128)),
     "4in2": ("epd4in2_V2", 0, (400, 300)),
     "7in5": ("epd7in5_V2", 0, (800, 480)),

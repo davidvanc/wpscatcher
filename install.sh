@@ -15,8 +15,9 @@ PANEL="${1:-4in2}"
 [[ $EUID -eq 0 ]] || { echo "Draai dit met sudo."; exit 1; }
 
 case "$PANEL" in
-  2in13|2in9|4in2|7in5) ;;
-  *) echo "Onbekend paneel '$PANEL'. Gebruik: sudo bash install.sh [2in13|2in9|4in2|7in5]"
+  2in13|2in13v3|2in9|4in2|7in5) ;;
+  *) echo "Onbekend paneel '$PANEL'."
+     echo "Gebruik: sudo bash install.sh [2in13|2in13v3|2in9|4in2|7in5]"
      exit 1 ;;
 esac
 echo "Installeren voor paneel: $PANEL"
