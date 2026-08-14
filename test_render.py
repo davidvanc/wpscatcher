@@ -28,6 +28,10 @@ CASES = [
     ("normaal", "Telenet-3F2A9", "Xk7mQp2ravenzwart"),
     ("lang random", "KLANT-GASTNET-2026", "b7Q!x2Lm9pR4vZ8tK1nS"),
     ("speciale tekens", 'Cafe;t Hoekje', 'wacht"woord\\met;tekens'),
+    # router gaf de afgeleide sleutel i.p.v. de passphrase: niet over te
+    # typen, dus het scherm hoort dat te zeggen in plaats van 64 tekens te
+    # proppen. De QR moet er wel gewoon mee werken.
+    ("hex-sleutel", "Proximus-9182", "a3f" + "0" * 61),
 ]
 
 OUT = "preview"

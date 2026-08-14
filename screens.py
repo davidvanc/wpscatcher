@@ -140,6 +140,18 @@ def wifi_payload(ssid: str, psk: str, hidden: bool = False) -> str:
     return payload + ";"
 
 
+def _password_line(draw, psk: str, max_w: int, px: int):
+    """De wachtwoordregel, of een eerlijke mededeling als dat niet kan.
+
+    64 hex tekens zijn niet de passphrase maar de daaruit afgeleide sleutel
+    (PBKDF2). Die valt niet terug te rekenen en al helemaal niet over te
+    typen, dus die uitschrijven heeft geen zin -- de QR werkt er wel mee.
+    """
+    if re.fullmatch(r"[0-9a-fA-F]{64}", psk or ""):
+        return _fit(draw, "sleutel alleen via de QR", max_w, px)
+    return _fit(draw, psk, max_w, px, "mono")
+
+
 def _qr(payload: str, target_px: int):
     code = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L,
                          border=2, box_size=1)
@@ -184,7 +196,7 @@ def connected(size, ssid: str, psk: str, payload: str, show_password: bool = Tru
         ]
         gaps = [max(2, height // 40), 0]
         if show_password:
-            lines.append(_fit(draw, psk, text_w, max(11, height // 10), "mono"))
+            lines.append(_password_line(draw, psk, text_w, max(11, height // 10)))
             gaps = [max(2, height // 40), max(5, height // 14), 0]
         boxes = [draw.textbbox((0, 0), text, font=font) for text, font in lines]
         y = (height - sum(b[3] for b in boxes) - sum(gaps)) // 2
@@ -196,8 +208,8 @@ def connected(size, ssid: str, psk: str, payload: str, show_password: bool = Tru
         name, font = _fit(draw, ssid, width - 2 * pad, max(14, height // 11), "bold")
         y = _center(draw, y, name, font, width)
         if show_password:
-            key, kfont = _fit(draw, psk, width - 2 * pad, max(12, height // 14),
-                              "mono")
+            key, kfont = _password_line(draw, psk, width - 2 * pad,
+                                        max(12, height // 14))
             _center(draw, y + max(4, height // 40), key, kfont, width)
 
     return image, box
