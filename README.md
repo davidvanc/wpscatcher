@@ -39,6 +39,36 @@ wachtwoord dus gewoon verder. Daarom wist wpscatcher bij een nette stop
 (`systemctl stop`, afsluiten) het scherm. Uit te zetten met
 `clear_on_stop = no`.
 
+## Zichzelf afsluiten
+
+Zodra de QR er staat heeft het toestel niets meer te doen, en het e-ink houdt
+dat beeld vast zonder stroom. Met `shutdown_after` in `[power]` sluit het
+zichzelf dan netjes af:
+
+```ini
+[power]
+shutdown_after = 30
+give_up_after = 5
+```
+
+Dat lost het echte probleem op: er draait geen bestandssysteem meer op het
+moment dat je de stekker eruit trekt, en dat is wat SD-kaarten sloopt. Het
+scherm wordt in dit geval **niet** gewist — dat beeld is juist waarvoor je
+het aanzette.
+
+`give_up_after` sluit ook af na een aantal mislukte WPS-pogingen (één poging
+duurt ~140 s). Eeuwig blijven proberen kost stroom; op accu is dat het
+verschil tussen een lege pack en een toestel dat je morgen gewoon aanzet.
+
+Beide staan standaard op 0 (uit). Zet ze pas aan als de eerste boot bewezen
+heeft dat alles werkt — anders schakelt het toestel zichzelf uit terwijl je
+nog aan het debuggen bent.
+
+Let op: `poweroff` op een kale Pi Zero haalt het verbruik niet naar nul. Het
+bord blijft in halt-toestand zo'n 15–25 mA trekken, tegen ~130 mA draaiend.
+Voor de SD-kaart is het probleem daarmee weg, voor de accu grotendeels — maar
+echt nul wordt het pas als je de stroom eraf haalt.
+
 ## Hoe het werkt
 
 Het toestel draait zijn **eigen `wpa_supplicant`**, niet NetworkManager — NM

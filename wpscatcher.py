@@ -15,6 +15,7 @@ import configparser
 import logging
 import os
 import signal
+import subprocess
 import sys
 import time
 
@@ -59,6 +60,12 @@ DEFAULTS = {
         "title": "wpscatcher",
         "show_password": "yes",
         "clear_on_stop": "yes",
+    },
+    "power": {
+        # seconden na het tonen van de QR voor het toestel zichzelf afsluit
+        "shutdown_after": "0",
+        # na hoeveel mislukte WPS-pogingen opgeven en afsluiten
+        "give_up_after": "0",
     },
 }
 
@@ -124,11 +131,19 @@ def watch_connection(sup: Supplicant, poll: int = 30) -> None:
     log.info("verbinding weg -- terug naar WPS")
 
 
-def run(cfg, disp) -> None:
+def run(cfg, disp) -> bool:
+    """Geeft True terug als het toestel zichzelf mag afsluiten.
+
+    Het beeld op e-ink blijft dan staan -- daarom wordt er in dat geval niet
+    gewist. Zo is er geen draaiend bestandssysteem meer op het moment dat de
+    stekker eruit gaat, en dat was de hele reden voor deze stand.
+    """
     wifi = cfg["wifi"]
     title = cfg["ui"]["title"]
     interface = wifi["interface"]
     window = wifi.getint("window")
+    shutdown_after = cfg["power"].getint("shutdown_after")
+    give_up_after = cfg["power"].getint("give_up_after")
 
     sup = Supplicant(interface, wifi["conf"], wifi["country"])
     if wifi.getboolean("forget_on_boot"):
@@ -150,6 +165,14 @@ def run(cfg, disp) -> None:
         if not sup.wait_connected(window):
             log.info("poging %d: geen WPS binnen %ds", attempt, window)
             sup.wps_cancel()
+            if give_up_after and attempt >= give_up_after:
+                # blijven proberen kost stroom; op accu is dat het verschil
+                # tussen een lege pack en een toestel dat je morgen aanzet
+                log.info("opgegeven na %d pogingen", attempt)
+                disp.show(screens.message(
+                    disp.size, "Geen WPS",
+                    f"opgegeven na {attempt} pogingen", title))
+                return True
             time.sleep(wifi.getint("retry_delay"))
             continue
 
@@ -167,6 +190,13 @@ def run(cfg, disp) -> None:
             log.info("ip: %s", address or "geen")
 
         show_credentials(disp, creds, cfg)
+
+        if shutdown_after:
+            log.info("QR staat -- afsluiten over %ds, het beeld blijft staan",
+                     shutdown_after)
+            time.sleep(shutdown_after)
+            return True
+
         watch_connection(sup)
 
 
@@ -212,20 +242,28 @@ def main() -> int:
 
     signal.signal(signal.SIGTERM, on_term)
 
+    keep_image = False
     try:
         if args.clear:
             disp.clear()
         elif args.simulate:
             simulate(cfg, disp, args.ssid, args.psk)
         else:
-            run(cfg, disp)
+            keep_image = run(cfg, disp)
     except KeyboardInterrupt:
         stopping = True
     finally:
-        if stopping and cfg["ui"].getboolean("clear_on_stop"):
+        # Wissen is er tegen een klantwachtwoord op een toestel in je tas.
+        # Sluiten we zelf af omdat de QR klaarstaat, dan is dat beeld juist
+        # het punt -- dan niet wissen.
+        if stopping and not keep_image and cfg["ui"].getboolean("clear_on_stop"):
             log.info("scherm wissen bij het stoppen")
             disp.clear()
         disp.sleep()
+
+    if keep_image:
+        log.info("afsluiten; het beeld blijft op het paneel staan")
+        subprocess.run(["systemctl", "poweroff"], capture_output=True)
     return 0
 
 
