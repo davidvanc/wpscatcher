@@ -39,6 +39,13 @@ CASES = [
         {"ssid": "Cafe t Hoekje", "psk": 'wacht"woord', "raw": False},
     ),
     (
+        # een } in het wachtwoord mag het blok niet afkappen, en de velden
+        # erna moeten nog gelezen worden
+        "accolade in wachtwoord",
+        'network={\n\tssid="Frituur"\n\tpsk="friet}es123"\n\tkey_mgmt=WPA-PSK\n}\n',
+        {"ssid": "Frituur", "psk": "friet}es123", "raw": False},
+    ),
+    (
         "hex-encoded ssid",
         "network={\n\tssid=4b6c616e7457696669\n\tpsk=\"geheim123\"\n}\n",
         {"ssid": "KlantWifi", "psk": "geheim123", "raw": False},

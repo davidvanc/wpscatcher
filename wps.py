@@ -24,8 +24,31 @@ update_config=1
 country={country}
 """
 
-_NETWORK_BLOCK = re.compile(r"network\s*=\s*\{(.*?)\}", re.S)
 _HEX64 = re.compile(r"\A[0-9a-fA-F]{64}\Z")
+
+
+def _network_blocks(text: str) -> list[dict[str, str]]:
+    """Splits de config in network-blokken, regel voor regel.
+
+    Niet met een regex over het hele blok: een } in een gequote waarde
+    (psk="abc}def") kapt zo'n match te vroeg af. wpa_supplicant schrijft
+    één veld per regel en de sluitaccolade op een eigen regel, dus
+    regelgewijs is er geen dubbelzinnigheid.
+    """
+    blocks: list[dict[str, str]] = []
+    fields: dict[str, str] | None = None
+    for raw in text.splitlines():
+        line = raw.strip()
+        if fields is None:
+            if re.fullmatch(r"network\s*=\s*\{", line):
+                fields = {}
+        elif line == "}":
+            blocks.append(fields)
+            fields = None
+        elif "=" in line and not line.startswith("#"):
+            key, _, value = line.partition("=")
+            fields[key.strip()] = value.strip()
+    return blocks
 
 
 class WpaError(RuntimeError):
@@ -171,16 +194,11 @@ class Supplicant:
             log.error("kan %s niet lezen: %s", self.conf_path, exc)
             return None
 
-        blocks = _NETWORK_BLOCK.findall(text)
+        blocks = _network_blocks(text)
         if not blocks:
             log.error("geen network={} blok in de config na WPS")
             return None
-
-        fields: dict[str, str] = {}
-        for line in blocks[-1].splitlines():  # laatste blok = wat WPS net schreef
-            if "=" in line and not line.strip().startswith("#"):
-                key, _, value = line.partition("=")
-                fields[key.strip()] = value.strip()
+        fields = blocks[-1]  # laatste blok = wat WPS net schreef
 
         ssid = _decode_ssid(fields.get("ssid", ""))
         if not ssid:
