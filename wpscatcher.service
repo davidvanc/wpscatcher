@@ -9,7 +9,10 @@ ExecStart=/usr/bin/python3 /opt/wpscatcher/wpscatcher.py -c /etc/wpscatcher/conf
 WorkingDirectory=/opt/wpscatcher
 # root nodig voor SPI (e-ink) en de wpa_supplicant control socket
 User=root
-Restart=always
+# on-failure, niet always: bij shutdown_after eindigt het script bewust met
+# exit 0 en moet de QR blijven staan. Een herstart zou de config wissen en
+# het zoekscherm over de QR heen zetten.
+Restart=on-failure
 RestartSec=5
 StandardOutput=journal
 StandardError=journal
