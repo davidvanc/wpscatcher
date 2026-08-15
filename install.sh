@@ -24,9 +24,12 @@ echo "Installeren voor paneel: $PANEL"
 
 echo "== 1/6  pakketten =="
 apt-get update
+# dhcpcd-base: kale dhcpcd-binary zonder service. NetworkManager (die op
+# Bookworm dhcp doet) wordt in stap 4 gemaskeerd; request_ip roept dhcpcd
+# daarna zelf per interface aan.
 apt-get install -y --no-install-recommends \
   python3 python3-pil python3-qrcode python3-spidev python3-gpiozero \
-  python3-lgpio wpasupplicant iw git
+  python3-lgpio wpasupplicant iw git dhcpcd-base
 
 echo
 echo "== 2/6  SPI aanzetten =="
