@@ -9,10 +9,16 @@ versie.** Dat bord heeft een BCM2835 met ARM1176-kern, dat is ARMv6. Het
 64-bit image draait daar niet op — je krijgt een kaart die simpelweg niet
 boot, zonder bruikbare foutmelding.
 
-In Raspberry Pi Imager: **Raspberry Pi OS (Legacy, 32-bit) Lite** of
-**Raspberry Pi OS (32-bit) Lite**. Niet de 64-bit, niet de Desktop-versie.
+In Raspberry Pi Imager: **Raspberry Pi OS (32-bit) Lite** — de gewone, op
+Bookworm gebaseerde versie. Niet de 64-bit, niet de Desktop-versie, en ook
+niet de **Legacy**-variant. Die Legacy is Bullseye: daar mount de
+bootpartitie op `/boot` in plaats van `/boot/firmware` en wordt
+`custom.toml` niet verwerkt, dus de [autoinstall](autoinstall/) installeert
+er stilletjes niets. Ook `install.sh` en dit stappenplan gaan uit van
+Bookworm.
 
-Voor een Zero 2 W maakt het niet uit; die is ARMv8 en slikt allebei.
+Voor een Zero 2 W geldt hetzelfde, alleen mag het daar ook de 64-bit
+Bookworm zijn; die is ARMv8 en slikt allebei.
 
 Lite volstaat: dit toestel heeft geen desktop nodig en elke minder
 geïnstalleerde package is minder dat kapot kan.
