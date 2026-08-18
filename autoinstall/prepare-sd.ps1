@@ -20,7 +20,11 @@ haalt na netwerk de pakketten op en draait install.sh. Daarna herstart het
 toestel en draait wpscatcher.
 
 .EXAMPLE
-.\prepare-sd.ps1 -Drive E: -Panel 2in13 -Hostname wpscatcher-klein `
+Zonder -Drive zoekt hij de kaart zelf: de schijf die zowel config.txt als
+cmdline.txt heeft. Vindt hij er geen of meerdere, dan stopt hij en moet je
+-Drive E: erbij zetten.
+
+.\prepare-sd.ps1 -Panel 2in13 -Hostname wpscatcher-klein `
     -User david -PubKeyFile C:\Users\david\.ssh\id_ed25519.pub `
     -WifiSsid MijnThuisnet -WifiPassword geheim123
 #>

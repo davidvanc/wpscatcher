@@ -13,11 +13,14 @@ niet meer aan te komen — geen Imager-tandwiel, geen ssh-sessie, geen
    die is Bullseye, en daar bestaat `/boot/firmware` niet en wordt
    `custom.toml` niet verwerkt — de autoinstall doet er stilletjes niets.
 
-2. Kijk welke letter de boot-partitie kreeg (die met `config.txt` erop) en
-   draai:
+2. Draai het script. De kaart hoef je niet aan te wijzen — hij zoekt zelf de
+   schijf die zowel `config.txt` als `cmdline.txt` heeft, want dat is de
+   boot-partitie van een Pi-kaart. De ext4-rootfs krijgt op Windows toch geen
+   letter. Vindt hij er geen of meerdere, dan stopt hij en noemt hij de
+   kandidaten; voeg dan `-Drive E:` toe.
 
 ```powershell
-.\prepare-sd.ps1 -Drive E: -Panel 2in13 -Hostname wpscatcher-klein -User david -PubKeyFile C:\Users\david\.ssh\id_ed25519.pub -WifiSsid MijnThuisnet -WifiPassword geheim123
+.\prepare-sd.ps1 -Panel 2in13 -Hostname wpscatcher-klein -User david -PubKeyFile C:\Users\david\.ssh\id_ed25519.pub -WifiSsid MijnThuisnet -WifiPassword geheim123
 ```
 
 3. Kaart uitwerpen, in de Pi, stroom erop. Twee herstarts later draait
