@@ -163,7 +163,7 @@ zichzelf, inclusief gebruiker, ssh-sleutel, usb gadget mode en het juiste
 paneel. Geen Imager-menu's, geen ssh-sessie.
 
 ```powershell
-.\prepare-sd.ps1 -Drive E: -Panel 2in13 -Hostname wpscatcher-klein -User david -PubKeyFile ~\.ssh\id_ed25519.pub -WifiSsid MijnThuisnet -WifiPassword geheim123
+.\prepare-sd.ps1 -Panel 2in13 -Hostname wpscatcher-klein -User david -PubKeyFile ~\.ssh\id_ed25519.pub -WifiSsid MijnThuisnet -WifiPassword geheim123
 ```
 
 Wil je het met de hand doen, of moet je achteraf iets nakijken, dan staat de
