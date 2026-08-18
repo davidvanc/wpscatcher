@@ -146,6 +146,36 @@ Kruislings dus. Daarna met PuTTY op de COM-poort, 115200 baud.
 
 Sluit **nooit** de 5 V of 3,3 V van de adapter aan als de Pi al gevoed is.
 
+## Als het toestel niet opstart
+
+Kijk naar het groene lampje op de Pi voor je iets anders probeert. Dat is een
+foutcode, geen willekeurig geknipper.
+
+| Flitsen | Betekenis | Meestal |
+|---|---|---|
+| 3× | `start.elf` niet gevonden | kaart wordt niet gelezen |
+| 4× | `start.elf` start niet | kaart of image stuk |
+| 7× | `kernel.img` niet gevonden | image onvolledig geschreven |
+| 8× | SDRAM niet herkend | bord defect |
+
+**Drie flitsen komt bijna altijd door de kaart, niet door het bestandssysteem.**
+De Zero heeft een push-in microSD-slot zonder klikvergrendeling: de kaart zit
+er alleen op wrijving in. Een HAT op de header duwen buigt het bord, en dan
+kan het contact wegvallen. Kaart eruit, er weer in, volledig indrukken.
+
+Twijfel je of er toch schade is, controleer het dan in plaats van te gokken:
+
+```bash
+sudo dumpe2fs -h /dev/mmcblk0p2 | grep -i "filesystem state"
+```
+
+Staat daar `clean`, dan is het bestandssysteem in orde en was het inderdaad
+alleen contact. `EXT4-fs ... orphan cleanup` in het bootlog is geen fout maar
+het journal dat zijn werk doet na een onnette afsluiting.
+
+Voorkomen: ondersteun het bord van onderen als je de HAT erop drukt, en
+gebruik een case — die klemt het bord en dekt de kaart af.
+
 ## 6. Volgorde
 
 1. Kaart schrijven met Imager, alles hierboven ingesteld
