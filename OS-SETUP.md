@@ -174,7 +174,18 @@ alleen contact. `EXT4-fs ... orphan cleanup` in het bootlog is geen fout maar
 het journal dat zijn werk doet na een onnette afsluiting.
 
 Voorkomen: ondersteun het bord van onderen als je de HAT erop drukt, en
-gebruik een case — die klemt het bord en dekt de kaart af.
+gebruik een case — die klemt het bord en dekt de kaart af. Het risicomoment is
+de montage, niet het gebruik daarna: in de case duwt niemand nog op het bord.
+
+Zit er een case omheen, dan kan je de kaart niet meer even heen en weer
+schuiven. Test daarom **vóór** je hem dichtmaakt: vijf keer koud starten
+(stroom eruit, stroom erin), niet herstarten via software — dat test de
+contacten niet. Vijf op vijf goed, dan zit hij.
+
+Voor onderweg is een tweede voorbereide kaart een beter antwoord dan
+gereedschap. Met [autoinstall/](autoinstall/) is die in vijf minuten gemaakt,
+en dan is een storing bij een klant een kaartwissel in plaats van een
+zoektocht.
 
 ## 6. Volgorde
 
