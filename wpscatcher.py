@@ -60,10 +60,16 @@ DEFAULTS = {
         "title": "wpscatcher",
         "show_password": "yes",
         "clear_on_stop": "yes",
+        # scherm wissen bij het opstarten: haalt ghosting weg en zorgt dat
+        # een half mislukte start niet de QR van de vorige klant laat staan
+        "clear_on_start": "yes",
     },
     "power": {
         # seconden na het tonen van de QR voor het toestel zichzelf afsluit
         "shutdown_after": "0",
+        # scherm wissen vlak voor dat afsluiten: de QR is het wifi-wachtwoord
+        # van een klant, en e-ink houdt dat vast tot je het overschrijft
+        "blank_before_shutdown": "no",
         # na hoeveel mislukte WPS-pogingen opgeven en afsluiten
         "give_up_after": "0",
     },
@@ -134,9 +140,10 @@ def watch_connection(sup: Supplicant, poll: int = 30) -> None:
 def run(cfg, disp) -> bool:
     """Geeft True terug als het toestel zichzelf mag afsluiten.
 
-    Het beeld op e-ink blijft dan staan -- daarom wordt er in dat geval niet
-    gewist. Zo is er geen draaiend bestandssysteem meer op het moment dat de
-    stekker eruit gaat, en dat was de hele reden voor deze stand.
+    Dan draait er geen bestandssysteem meer op het moment dat de stekker
+    eruit gaat, en dat was de hele reden voor deze stand. Of het beeld daarbij
+    blijft staan of gewist wordt, bepaalt blank_before_shutdown: de QR is
+    bruikbaar maar bevat wel het wachtwoord van een klant.
     """
     wifi = cfg["wifi"]
     title = cfg["ui"]["title"]
@@ -144,6 +151,10 @@ def run(cfg, disp) -> bool:
     window = wifi.getint("window")
     shutdown_after = cfg["power"].getint("shutdown_after")
     give_up_after = cfg["power"].getint("give_up_after")
+
+    if cfg["ui"].getboolean("clear_on_start"):
+        log.info("scherm wissen bij het opstarten")
+        disp.clear()
 
     sup = Supplicant(interface, wifi["conf"], wifi["country"])
     if wifi.getboolean("forget_on_boot"):
@@ -192,9 +203,14 @@ def run(cfg, disp) -> bool:
         show_credentials(disp, creds, cfg)
 
         if shutdown_after:
-            log.info("QR staat -- afsluiten over %ds, het beeld blijft staan",
-                     shutdown_after)
+            blank = cfg["power"].getboolean("blank_before_shutdown")
+            log.info("QR staat -- afsluiten over %ds, beeld %s",
+                     shutdown_after, "wordt gewist" if blank else "blijft staan")
             time.sleep(shutdown_after)
+            if blank:
+                # eenmaal gewist is het weg tot je opnieuw bij die router staat
+                log.info("scherm wissen voor het afsluiten")
+                disp.clear()
             return True
 
         watch_connection(sup)

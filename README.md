@@ -56,6 +56,32 @@ moment dat je de stekker eruit trekt, en dat is wat SD-kaarten sloopt. Het
 scherm wordt in dit geval **niet** gewist — dat beeld is juist waarvoor je
 het aanzette.
 
+### Het scherm wissen
+
+```ini
+[ui]
+clear_on_start = yes
+
+[power]
+shutdown_after = 300
+blank_before_shutdown = yes
+```
+
+`clear_on_start` wist het paneel zodra het programma start. Dat haalt ghosting
+van de vorige sessie weg en zorgt dat een half mislukte start niet de QR van
+de vorige klant laat staan.
+
+`blank_before_shutdown` wist het vlak voor het afsluiten. Dat is de veilige
+stand als je de code meteen gebruikt: die QR is het wifi-wachtwoord van je
+klant in machineleesbare vorm, en e-ink houdt dat weken vast — ook
+uitgeschakeld, ook in je tas. Heb je het eenmaal aan je telefoon toegevoegd,
+dan heb je het beeld nergens meer voor nodig.
+
+**Eenmaal gewist krijg je het niet terug zonder opnieuw bij die router te
+staan.** Kies `shutdown_after` dus naar hoe je werkt: scan je meteen ter
+plaatse, dan volstaat 300 (vijf minuten) ruim. Gebruik je de code pas later,
+zet het dan hoger — of laat `blank_before_shutdown` op `no`.
+
 `give_up_after` sluit ook af na een aantal mislukte WPS-pogingen (één poging
 duurt ~140 s). Eeuwig blijven proberen kost stroom; op accu is dat het
 verschil tussen een lege pack en een toestel dat je morgen gewoon aanzet.
