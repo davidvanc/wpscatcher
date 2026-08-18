@@ -91,7 +91,7 @@ en gaat na elke refresh weer slapen. Dat scheelt slijtage en stroom.
 |---|---|---|
 | Bord | Pi Zero 2 **WH**, of gewoon Zero **WH** | de H = header al gesoldeerd |
 | Scherm | Waveshare 4,2" e-Paper Module, **zwart-wit**, 400×300 | zie hieronder |
-| Kaart | microSD 8 GB+ | Raspberry Pi OS **Lite** (Bookworm) |
+| Kaart | microSD 8 GB+ | Raspberry Pi OS **Lite** (Bookworm of Trixie) |
 | Voeding | usb of powerbank | |
 
 De **originele Zero WH volstaat**, en die is doorgaans wel te krijgen als de
@@ -163,6 +163,25 @@ journalctl -u wpscatcher -f
 Let op: het script **maskeert NetworkManager**. Daarna beheert wpscatcher
 wlan0 zelf. Zorg dat je een andere weg naar binnen hebt (scherm+toetsenbord of
 usb-ethernet) voor het geval er iets misloopt — het vraagt eerst om bevestiging.
+
+## Boottijd
+
+Gemeten op een Pi Zero W met Raspberry Pi OS Lite (Trixie), tijd tot
+`multi-user.target`:
+
+| | |
+|---|---|
+| Zoals geleverd | 2 min 03 |
+| Na `install.sh` stap 3 (cloud-init uit) | 1 min 38 |
+| Na stap 5 (NetworkManager gemaskeerd) | ~35 s |
+
+Twee blokken op het kritieke pad, allebei zinloos op dit toestel: cloud-init
+richt VM's in een datacenter in, en NetworkManager staat op wifi te wachten
+die wpscatcher toch zelf gaat beheren. `install.sh` haalt ze allebei weg.
+
+Dat is de moeite omdat het venster van de router 120 s duurt: hoe eerder het
+"WPS zoeken"-scherm er staat, hoe meer van dat venster je overhoudt. Wacht op
+dat scherm voor je op de knop van de modem drukt.
 
 ## Testen zonder hardware
 

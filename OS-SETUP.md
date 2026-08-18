@@ -10,15 +10,15 @@ versie.** Dat bord heeft een BCM2835 met ARM1176-kern, dat is ARMv6. Het
 boot, zonder bruikbare foutmelding.
 
 In Raspberry Pi Imager: **Raspberry Pi OS (32-bit) Lite** — de gewone, op
-Bookworm gebaseerde versie. Niet de 64-bit, niet de Desktop-versie, en ook
+Bookworm of Trixie gebaseerde versie (allebei getest). Niet de 64-bit, niet de Desktop-versie, en ook
 niet de **Legacy**-variant. Die Legacy is Bullseye: daar mount de
 bootpartitie op `/boot` in plaats van `/boot/firmware` en wordt
 `custom.toml` niet verwerkt, dus de [autoinstall](autoinstall/) installeert
 er stilletjes niets. Ook `install.sh` en dit stappenplan gaan uit van
-Bookworm.
+Bookworm of nieuwer.
 
 Voor een Zero 2 W geldt hetzelfde, alleen mag het daar ook de 64-bit
-Bookworm zijn; die is ARMv8 en slikt allebei.
+versie zijn; die is ARMv8 en slikt allebei.
 
 Lite volstaat: dit toestel heeft geen desktop nodig en elke minder
 geïnstalleerde package is minder dat kapot kan.

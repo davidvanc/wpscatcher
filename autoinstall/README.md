@@ -9,7 +9,7 @@ niet meer aan te komen — geen Imager-tandwiel, geen ssh-sessie, geen
 1. Schrijf een **kale** Raspberry Pi OS Lite op de kaart met Imager. Sla het
    tandwiel over; dit script doet die instellingen zelf. Voor een **Zero WH
    moet dat de 32-bit versie zijn** — dat bord is ARMv6 en boot niet van een
-   64-bit image. Neem de gewone Bookworm-versie, **niet de Legacy-variant**:
+   64-bit image. Neem de gewone Bookworm- of Trixie-versie, **niet de Legacy-variant**:
    die is Bullseye, en daar bestaat `/boot/firmware` niet en wordt
    `custom.toml` niet verwerkt — de autoinstall doet er stilletjes niets.
 
