@@ -70,41 +70,63 @@ nooit rechtstreeks in `/etc/sudoers` — een typfout daar sluit je buiten.
 ## 4. USB gadget mode: je vaste weg naar binnen
 
 Zodra wpscatcher wlan0 overneemt is dit de enige betrouwbare toegang. Eén
-usb-kabel van je laptop naar de Pi geeft stroom én netwerk.
+usb-kabel van je laptop naar de Pi geeft stroom en netwerk tegelijk.
 
-Op de SD-kaart, in de boot-partitie (op Windows zichtbaar zodra je de kaart
-insteekt):
+`install.sh` stap 5 zet dit allemaal zelf klaar. Doe je het met de hand, let
+dan op de twee dingen die dit stilletjes laten falen:
 
-`config.txt` — regel toevoegen onderaan:
+**De overlay moet onder `[all]`.** Raspberry Pi OS levert een `config.txt`
+met secties: `[cm4]`, `[cm5]`, `[pi5]`, `[all]`. Er staat daar al een
+`dtoverlay=dwc2,dr_mode=host`, maar die zit in `[cm5]` en geldt dus niet voor
+een Zero. Onderaan iets toevoegen kan je in de verkeerde sectie doen belanden.
+Zet een eigen kop:
 
 ```
-dtoverlay=dwc2
+[all]
+dtoverlay=dwc2,dr_mode=peripheral
 ```
 
-`cmdline.txt` — het is één lange regel; voeg direct na `rootwait` toe, met
-spaties eromheen en **geen** nieuwe regel:
+**Het moet `peripheral` zijn, niet `otg`.** In otg-modus bepaalt de ID-pin van
+de connector de rol, en die hangt los aan een gewone usb-kabel — de controller
+kiest dan host en schakelt nooit om. Je ziet `dwc2` en `g_ether` netjes
+geladen worden en tóch blijft `/sys/class/udc/` leeg. Dat is de test:
+
+```bash
+ls /sys/class/udc/
+```
+
+Staat daar niets, dan is de peripheral-kant niet actief en heeft `g_ether`
+niets om zich aan te binden.
+
+In `cmdline.txt` (één lange regel, geen nieuwe regel toevoegen):
 
 ```
 modules-load=dwc2,g_ether
 ```
 
-Steek de kabel daarna in de **USB**-poort van de Zero, niet in **PWR**. Op de
-Zero zijn dat twee identieke micro-usb-poorten; alleen de middelste voert
-data. Verkeerde poort = de Pi start wel op maar er gebeurt niets.
+### Een adres op usb0
+
+Een interface zonder adres helpt niet, en NetworkManager — die dat normaal
+regelt — wordt door `install.sh` juist gemaskeerd. Daarom installeert stap 5
+`usb0-vast-ip.service`, die los van NetworkManager **10.55.0.1/24** op usb0
+zet.
+
+Aan de kant van Windows geef je de nieuwe netwerkadapter een vast adres in
+hetzelfde bereik, bijvoorbeeld `10.55.0.2` met masker `255.255.255.0`. Daarna:
 
 ```bash
-ssh david@wpscatcher-klein.local
+ssh david@10.55.0.1
 ```
 
-Reageert `.local` niet, dan mist avahi:
-
-```bash
-sudo apt install -y avahi-daemon
-```
+Gebruik het IP en niet `wpscatcher.local` — als je modem zelf DNS beantwoordt
+(veel doen dat) komt mDNS niet aan bod en krijg je "non-existent domain".
 
 Op Windows moet er soms nog een RNDIS-stuurprogramma bij voor het virtuele
-netwerkapparaat. Dat is het vervelendste stukje van deze opzet; lukt het
-niet, gebruik dan de seriële console hieronder.
+netwerkapparaat. Dat is het vervelendste stukje van deze opzet; lukt het niet,
+gebruik dan de seriële console hieronder.
+
+Steek de kabel in de **USB**-poort van de Zero, niet in **PWR**. Dat zijn twee
+identieke micro-usb-poorten en alleen de middelste voert data.
 
 ## 5. Terugvaloptie: seriële console
 

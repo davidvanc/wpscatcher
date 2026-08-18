@@ -122,7 +122,8 @@ if (Test-Path $payload) { Remove-Item $payload -Recurse -Force }
 New-Item -ItemType Directory -Path $payload | Out-Null
 
 $files = @('wpscatcher.py', 'wps.py', 'screens.py', 'display.py',
-           'config.ini', 'wpscatcher.service', 'install.sh')
+           'config.ini', 'wpscatcher.service', 'usb0-vast-ip.service',
+           'install.sh')
 foreach ($f in $files) { Copy-Item (Join-Path $repo $f) $payload }
 Copy-Item (Join-Path $PSScriptRoot 'stage2.sh') $payload
 Copy-Item (Join-Path $PSScriptRoot 'wpscatcher-provision.service') $payload
@@ -132,8 +133,11 @@ Copy-Item (Join-Path $PSScriptRoot 'firstrun.sh') (Join-Path $boot 'firstrun.sh'
 
 # -- config.txt: SPI voor het scherm, dwc2 voor usb gadget -------------------
 
-$cfg = (Get-Content $configTxt -Raw).TrimEnd() + "`n"
-foreach ($line in 'dtparam=spi=on', 'dtoverlay=dwc2') {
+# Expliciet een [all]-kop: aan het einde van config.txt kan je zonder dat in
+# een [cm4]/[cm5]/[pi5]-sectie belanden, en die gelden niet voor een Zero.
+# Dan gebeurt er stilletjes niets.
+$cfg = (Get-Content $configTxt -Raw).TrimEnd() + "`n`n[all]`n"
+foreach ($line in 'dtparam=spi=on', 'dtoverlay=dwc2,dr_mode=peripheral') {
     if ($cfg -notmatch [regex]::Escape($line)) {
         $cfg += "$line`n"
         Write-Host "config.txt  + $line"
