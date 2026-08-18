@@ -27,7 +27,7 @@ toestel en draait wpscatcher.
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory)][string]$Drive,
+    [string]$Drive,
     [Parameter(Mandatory)][ValidateSet('2in13', '2in13v3', '2in9', '4in2', '7in5')]
     [string]$Panel,
     [Parameter(Mandatory)][string]$Hostname,
@@ -44,8 +44,44 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
-$boot = $Drive.TrimEnd('\')
-if (-not (Test-Path $boot) -and $boot -notmatch ':$') { $boot = "$boot`:" }
+function Find-BootPartitie {
+    # De boot-partitie van een Pi-kaart is FAT en krijgt een letter; de rootfs
+    # is ext4 en die ziet Windows niet. Herkenbaar aan de twee bestanden die
+    # er altijd op staan.
+    Get-Volume -ErrorAction SilentlyContinue |
+        Where-Object { $_.DriveLetter } |
+        ForEach-Object {
+            $pad = "$($_.DriveLetter):"
+            if ((Test-Path (Join-Path $pad 'config.txt')) -and
+                (Test-Path (Join-Path $pad 'cmdline.txt'))) {
+                [pscustomobject]@{
+                    Pad       = $pad
+                    Label     = $_.FileSystemLabel
+                    Verwissel = ($_.DriveType -eq 'Removable')
+                }
+            }
+        }
+}
+
+if ($Drive) {
+    $boot = $Drive.TrimEnd('\')
+    if (-not (Test-Path $boot) -and $boot -notmatch ':$') { $boot = "$boot`:" }
+} else {
+    $kandidaten = @(Find-BootPartitie)
+    if ($kandidaten.Count -eq 0) {
+        throw "Geen Pi-bootpartitie gevonden. Zit de kaart erin en is hij al met Imager beschreven? Anders -Drive zelf opgeven."
+    }
+    if ($kandidaten.Count -gt 1) {
+        Write-Host "Meerdere kandidaten:"
+        $kandidaten | ForEach-Object { Write-Host "  $($_.Pad)  $($_.Label)" }
+        throw "Kies er zelf een met -Drive."
+    }
+    $boot = $kandidaten[0].Pad
+    Write-Host "Kaart gevonden : $boot  ($($kandidaten[0].Label))"
+    if (-not $kandidaten[0].Verwissel) {
+        Write-Host "LET OP: dit is geen verwisselbare schijf." -ForegroundColor Yellow
+    }
+}
 
 function Write-Lf($path, $text) {
     # Alles hier wordt op Linux gelezen: LF afdwingen, geen BOM.
