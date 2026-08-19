@@ -6,8 +6,18 @@ niet meer aan te komen — geen Imager-tandwiel, geen ssh-sessie, geen
 
 ## Gebruik
 
-1. Schrijf een **kale** Raspberry Pi OS Lite op de kaart met Imager. Sla het
-   tandwiel over; dit script doet die instellingen zelf. Voor een **Zero WH
+1. Schrijf Raspberry Pi OS Lite op de kaart met Imager. Het tandwiel mag je
+   **gebruiken of overslaan** — allebei werkt:
+
+   - **Tandwiel gebruikt** (hostname, gebruiker, ssh-sleutel, wifi): dit
+     script herkent dat en sluit zich erbij aan. Je hoeft `-WifiSsid` en
+     `-WifiPassword` dan niet mee te geven.
+   - **Tandwiel overgeslagen**: dan regelt dit script het, en zijn
+     `-WifiSsid` en `-WifiPassword` verplicht.
+
+   Er is maar één haak in `cmdline.txt` (`systemd.run=`). Heeft Imager die al
+   bezet, dan plakt dit script zijn stap in Imagers eigen `firstrun.sh` in
+   plaats van hem te overschrijven. Voor een **Zero WH
    moet dat de 32-bit versie zijn** — dat bord is ARMv6 en boot niet van een
    64-bit image. Neem de gewone Bookworm- of Trixie-versie, **niet de Legacy-variant**:
    die is Bullseye, en daar bestaat `/boot/firmware` niet en wordt
@@ -18,6 +28,13 @@ niet meer aan te komen — geen Imager-tandwiel, geen ssh-sessie, geen
    boot-partitie van een Pi-kaart. De ext4-rootfs krijgt op Windows toch geen
    letter. Vindt hij er geen of meerdere, dan stopt hij en noemt hij de
    kandidaten; voeg dan `-Drive E:` toe.
+
+Windows weigert standaard `.ps1`-bestanden te starten. Zet het beleid eerst
+voor deze ene sessie — dat verandert niets blijvends:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
 
 ```powershell
 .\prepare-sd.ps1 -Panel 2in13 -Hostname wpscatcher-klein -User david -PubKeyFile C:\Users\david\.ssh\id_ed25519.pub -WifiSsid MijnThuisnet -WifiPassword geheim123

@@ -39,6 +39,10 @@ export WPSCATCHER_ASSUME_YES=1
 if bash "$SRC/install.sh" "$PANEL"; then
   set +x
   echo "=== installatie geslaagd, unit uitschakelen ==="
+  # Pas nu het antwoordbestand weghalen: de gebruiker en de wifi hebben
+  # aantoonbaar gewerkt, want we hebben er pakketten mee opgehaald. Eerder
+  # weggooien zou de provisioning kunnen slopen als er iets misging.
+  rm -f "$BOOT/custom.toml"
   systemctl disable wpscatcher-provision.service
   rm -f /etc/systemd/system/wpscatcher-provision.service
   systemctl daemon-reload

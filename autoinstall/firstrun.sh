@@ -1,4 +1,5 @@
 #!/bin/bash
+# wpscatcher-autoinstall-fase1
 # Fase 1 van de autoinstall -- draait via systemd.run bij de allereerste boot.
 #
 # Hier is er nog geen netwerk: systemd.run draait vroeg, voordat
@@ -30,9 +31,9 @@ install -m 644 "$SRC/wpscatcher-provision.service" \
   /etc/systemd/system/wpscatcher-provision.service
 systemctl enable wpscatcher-provision.service
 
-# custom.toml bevat je wifi- en gebruikerswachtwoord in leesbare vorm.
-# Het is verwerkt, dus het hoeft niet op de kaart te blijven staan.
-rm -f "$BOOT/custom.toml"
+# custom.toml NIET hier weghalen: fase 1 draait via systemd.run en dat is
+# vroeg -- mogelijk voordat Raspberry Pi OS dat bestand verwerkt heeft. Het
+# weghalen gebeurt in fase 2, als de gebruiker en de wifi aantoonbaar staan.
 
 # Onze haak uit cmdline.txt halen, anders draait dit elke boot opnieuw.
 sed -i 's| systemd.run=[^ ]*||g; s| systemd.run_success_action=[^ ]*||g' \

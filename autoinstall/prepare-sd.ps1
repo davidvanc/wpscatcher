@@ -37,8 +37,8 @@ param(
     [Parameter(Mandatory)][string]$Hostname,
     [Parameter(Mandatory)][string]$User,
     [Parameter(Mandatory)][string]$PubKeyFile,
-    [Parameter(Mandatory)][string]$WifiSsid,
-    [Parameter(Mandatory)][string]$WifiPassword,
+    [string]$WifiSsid,
+    [string]$WifiPassword,
     [string]$Password = 'wpscatcher',
     [string]$Country = 'BE',
     [string]$Timezone = 'Europe/Brussels',
@@ -109,14 +109,39 @@ $pubkey = (Get-Content $PubKeyFile -Raw).Trim()
 if ($pubkey -notmatch '^(ssh-|ecdsa-)') {
     throw "Dat ziet er niet uit als een OpenSSH publieke sleutel: $PubKeyFile"
 }
-if ((Get-Content $cmdline -Raw) -match 'systemd\.run=') {
-    throw "cmdline.txt heeft al een systemd.run-haak. Schrijf de kaart opnieuw met een kale image."
+# -- heeft Imager het tandwiel al gebruikt? ---------------------------------
+# Dan regelt hij gebruiker, wifi en ssh, en is cmdline.txt zijn haak al kwijt
+# aan zijn eigen firstrun.sh. Wij sluiten daarbij aan in plaats van te vechten
+# om die ene plek.
+
+$firstrunPad = Join-Path $boot 'firstrun.sh'
+$tomlPad = Join-Path $boot 'custom.toml'
+$onzeFirstrun = (Test-Path $firstrunPad) -and
+                ((Get-Content $firstrunPad -Raw) -match 'wpscatcher-autoinstall-fase1')
+$imagerFirstrun = (Test-Path $firstrunPad) -and (-not $onzeFirstrun)
+$imagerToml = (Test-Path $tomlPad) -and (-not $onzeFirstrun)
+
+if ($onzeFirstrun) {
+    throw "Deze kaart is al voorbereid. Schrijf hem opnieuw met Imager voor je dit script draait."
+}
+if ($imagerFirstrun) {
+    Write-Host "Imager-opzet gevonden (firstrun.sh) -- ik sluit daarbij aan."
+} elseif ($imagerToml) {
+    Write-Host "Imager-opzet gevonden (custom.toml) -- gebruiker en wifi komen daarvandaan."
+} else {
+    if (-not $WifiSsid -or -not $WifiPassword) {
+        throw "Geen Imager-opzet op de kaart. Geef dan -WifiSsid en -WifiPassword mee, of gebruik het tandwiel van Imager."
+    }
 }
 
 Write-Host "Kaart      : $boot"
 Write-Host "Toestel    : $Hostname (paneel $Panel)"
 Write-Host "Gebruiker  : $User, ssh met sleutel $(Split-Path -Leaf $PubKeyFile)"
-Write-Host "Wifi       : $WifiSsid (alleen nodig om te installeren)"
+if ($imagerFirstrun -or $imagerToml) {
+    Write-Host "Wifi       : komt van Imager"
+} else {
+    Write-Host "Wifi       : $WifiSsid (alleen nodig om te installeren)"
+}
 if (-not $Force) {
     $answer = Read-Host "Doorgaan? [j/N]"
     if ($answer -notmatch '^[jJ]') { Write-Host 'Afgebroken.'; return }
@@ -153,7 +178,11 @@ country = $(Toml $Country)
 keymap = $(Toml $Keymap)
 timezone = $(Toml $Timezone)
 "@
-Write-Lf (Join-Path $boot 'custom.toml') $toml
+if ($imagerToml -or $imagerFirstrun) {
+    Write-Host "custom.toml niet overschreven -- Imager regelt gebruiker en wifi"
+} else {
+    Write-Lf $tomlPad $toml
+}
 
 # -- broncode en paneelkeuze -------------------------------------------------
 
@@ -169,7 +198,24 @@ Copy-Item (Join-Path $PSScriptRoot 'stage2.sh') $payload
 Copy-Item (Join-Path $PSScriptRoot 'wpscatcher-provision.service') $payload
 
 Write-Lf (Join-Path $boot 'wpscatcher-panel') "$Panel`n"
-Copy-Item (Join-Path $PSScriptRoot 'firstrun.sh') (Join-Path $boot 'firstrun.sh')
+if ($imagerFirstrun) {
+    # Imagers script mag niet overschreven worden: daar zitten gebruiker, wifi
+    # en ssh-sleutel in. We plakken onze stap ervoor in, net voor hij zichzelf
+    # opruimt.
+    $fragment = (Get-Content (Join-Path $PSScriptRoot 'fase1-fragment.sh') -Raw) -replace "`r`n", "`n"
+    $inhoud = (Get-Content $firstrunPad -Raw) -replace "`r`n", "`n"
+    $anker = [regex]::Match($inhoud, '(?m)^\s*rm -f .*firstrun\.sh.*$')
+    if ($anker.Success) {
+        $inhoud = $inhoud.Insert($anker.Index, $fragment + "`n")
+    } else {
+        $inhoud = $inhoud -replace '(?m)^exit 0\s*$', ($fragment + "`nexit 0")
+    }
+    $utf8b = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($firstrunPad, $inhoud, $utf8b)
+    Write-Host "firstrun.sh van Imager aangevuld met onze fase 1"
+} else {
+    Copy-Item (Join-Path $PSScriptRoot 'firstrun.sh') $firstrunPad
+}
 
 # -- config.txt: SPI voor het scherm, dwc2 voor usb gadget -------------------
 
@@ -189,7 +235,12 @@ Write-Lf $configTxt $cfg
 
 $cmd = (Get-Content $cmdline -Raw).Trim()
 if ($cmd -notmatch 'modules-load=') { $cmd += ' modules-load=dwc2,g_ether' }
-$cmd += ' systemd.run=/boot/firmware/firstrun.sh systemd.run_success_action=reboot'
+if ($imagerFirstrun) {
+    # Imagers haak staat er al en wijst naar hetzelfde bestand
+    Write-Host "cmdline.txt: haak van Imager blijft staan"
+} elseif ($cmd -notmatch 'systemd\.run=') {
+    $cmd += ' systemd.run=/boot/firmware/firstrun.sh systemd.run_success_action=reboot'
+}
 # cmdline.txt moet één regel blijven, zonder afsluitende newline
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 [System.IO.File]::WriteAllText($cmdline, $cmd, $utf8)
