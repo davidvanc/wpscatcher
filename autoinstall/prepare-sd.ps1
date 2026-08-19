@@ -203,6 +203,7 @@ if ($imagerFirstrun) {
     # en ssh-sleutel in. We plakken onze stap ervoor in, net voor hij zichzelf
     # opruimt.
     $fragment = (Get-Content (Join-Path $PSScriptRoot 'fase1-fragment.sh') -Raw) -replace "`r`n", "`n"
+    $fragment = $fragment.Replace('@@USER@@', $User).Replace('@@PUBKEY@@', $pubkey)
     $inhoud = (Get-Content $firstrunPad -Raw) -replace "`r`n", "`n"
     $anker = [regex]::Match($inhoud, '(?m)^\s*rm -f .*firstrun\.sh.*$')
     if ($anker.Success) {
